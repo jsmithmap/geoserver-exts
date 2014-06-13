@@ -21,11 +21,6 @@
   <dependencies>
     <dependency>
       <groupId>org.geogit</groupId>
-      <artifactId>geogit-core</artifactId>
-      <version>${geogit.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.geogit</groupId>
       <artifactId>geogit-geotools</artifactId>
       <version>${geogit.version}</version>
     </dependency>
@@ -221,7 +216,6 @@
                   <include>org.geogit:*</include>
                   <include>com.google.guava:guava</include>
                   <include>com.google.inject.extensions:guice-multibindings</include>
-                  <include>org.slf4j:slf4j-api</include>
                   <include>com.google.inject:guice</include>
                   <include>javax.inject:javax.inject</include>
                   <include>aopalliance:aopalliance</include>
@@ -244,16 +238,22 @@
                   <include>org.geogit:geogit-sqlite-xerial</include>
                   <include>org.geogit:geogit-sqlite-core</include>
                   <include>org.xerial:sqlite-jdbc</include>
-                  <!--
-                  <include>ch.qos.logback:logback-core</include>
-                  <include>ch.qos.logback:logback-classic</include>
-                  <include>org.slf4j:jul-to-slf4j</include>
-                   -->
                   <include>net.sf.py4j:py4j</include>
                   <include>com.sleepycat:je</include>
                   <include>org.xerial:spatialite-jdbc</include>
                   <include>org.geotools.jdbc:gt-jdbc-spatialite</include>
                   <include>org.geotools:gt-geojson</include>
+                  
+                  <include>com.beust:jcommander</include>
+                  <include>jline:jline</include>
+                  <include>com.googlecode.json-simple:json-simple</include>
+                  
+                  <!-- Ignore these, lets use geoserver's logging mechanism
+                  <include>org.slf4j:slf4j-api</include>
+                  <include>org.slf4j:jul-to-slf4j</include>
+                  <include>ch.qos.logback:logback-core</include>
+                  <include>ch.qos.logback:logback-classic</include>
+                   -->
                 </includes>
               </artifactSet>
               <relocations>
@@ -264,11 +264,6 @@
                    -->
                   <pattern>com.google.common</pattern>
                   <shadedPattern>shaded.com.google.common</shadedPattern>
-                </relocation>
-                <relocation>
-                  <!-- version conflict with geoserver's -->
-                  <pattern>org.slf4j</pattern>
-                  <shadedPattern>shaded.org.slf4j</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
