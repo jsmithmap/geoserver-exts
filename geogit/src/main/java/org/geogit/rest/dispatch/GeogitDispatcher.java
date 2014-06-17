@@ -19,7 +19,6 @@ import org.geogit.rest.repository.RepositoryProvider;
 import org.geogit.rest.repository.RepositoryResource;
 import org.geogit.rest.repository.RepositoryRouter;
 import org.geogit.rest.repository.RestletException;
-import org.geogit.web.console.ConsoleResourceResource;
 import org.geoserver.catalog.Catalog;
 import org.geoserver.ows.util.ResponseUtils;
 import org.geoserver.rest.GeoServerServletConverter;
@@ -27,7 +26,6 @@ import org.geoserver.rest.PageInfo;
 import org.geoserver.rest.RESTDispatcher;
 import org.geoserver.rest.RESTMapping;
 import org.geotools.util.logging.Logging;
-import org.restlet.Redirector;
 import org.restlet.Restlet;
 import org.restlet.Router;
 import org.restlet.data.Request;
@@ -109,12 +107,6 @@ public class GeogitDispatcher extends AbstractController {
         router.attach("/{repository}/repo", makeRepoRouter());
         router.attach("/{repository}/{command}.{extension}", CommandResource.class);
         router.attach("/{repository}/{command}", CommandResource.class);
-
-        Redirector redirector = new Redirector(null, "console/", Redirector.MODE_CLIENT_PERMANENT);
-        router.attach("/{repository}/console/{resource}", ConsoleResourceResource.class);
-        router.attach("/{repository}/console/", ConsoleResourceResource.class);
-        router.attach("/{repository}/console", redirector);
-
         return router;
     }
 
