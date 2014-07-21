@@ -339,7 +339,6 @@ public class LayerResource extends Resource {
 
     // catalog integration
     private final Catalog catalog;
-    private final String format;
     private final String layerId;
 
 
@@ -388,10 +387,9 @@ public class LayerResource extends Resource {
     /** If geometry can be edited */
     //	boolean allowGeometryUpdates;
 
-    public LayerResource(Context context, Request request, Response response, Catalog catalog, String format, String layerId) {
+    public LayerResource(Context context, Request request, Response response, Catalog catalog, String layerId) {
         super(context, request, response);
         this.catalog = catalog;
-        this.format = format;
         this.layerId = layerId;
         getVariants().add(JSON);
     }	
@@ -409,10 +407,12 @@ public class LayerResource extends Resource {
     }
 
     private Representation buildJsonRepresentation() {
+    	String format = getRequest().getResourceRef().getQueryAsForm().getFirstValue("f");
         if (!"json".equals(format)) {
             throw new IllegalStateException("f=json expected");
         }
         String workspaceName = (String) getRequest().getAttributes().get("workspace");
+        String layerId = (String) getRequest().getAttributes().get("layerOrTable");
         Integer layerIndex = Integer.valueOf(layerId);
 
         LayerOrTable entry;

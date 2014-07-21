@@ -4,6 +4,7 @@
  */
 package org.opengeo.gsr.service;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
@@ -29,7 +30,7 @@ public class CatalogService implements AbstractService {
     private double currentVersion;
 
     @XStreamImplicit(itemFieldName = "folders")
-    private List<String> folders;
+    private List<String> folders = Collections.emptyList();
 
     @XStreamImplicit(itemFieldName = "services")
     private List<AbstractService> services;

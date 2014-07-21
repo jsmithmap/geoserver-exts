@@ -44,15 +44,11 @@ import java.util.NoSuchElementException;
 public class FeatureResource extends Resource {
     private static final FilterFactory2 FILTERS = CommonFactoryFinder.getFilterFactory2();
     public static final Variant JSON = new Variant(new MediaType("application/json"));
-    private final String format;
-    private final String featureId;
     private final Catalog catalog;
 
-    public FeatureResource(Context context, Request request, Response response, Catalog catalog, String format, String featureId) {
+    public FeatureResource(Context context, Request request, Response response, Catalog catalog) {
         super(context, request, response);
         this.catalog = catalog;
-        this.format = format;
-        this.featureId = featureId;
         getVariants().add(JSON);
     }
 
@@ -76,6 +72,7 @@ public class FeatureResource extends Resource {
     }
 
     private Representation buildJsonRepresentation() throws IOException {
+    	String format = getRequest().getResourceRef().getQueryAsForm().getFirstValue("f");
         if (!"json".equals(format)) throw new IllegalArgumentException("json is the only supported format");
         String workspace = (String) getRequest().getAttributes().get("workspace");
 
@@ -93,6 +90,7 @@ public class FeatureResource extends Resource {
         }
 
 
+        String featureId = (String) getRequest().getAttributes().get("featureId");
         Filter idFilter = FILTERS.id(FILTERS.featureId(featureType.getFeatureType().getName().getLocalPart() + "." + featureId));
 
         return new JsonFeatureRepresentation(featureType, idFilter);

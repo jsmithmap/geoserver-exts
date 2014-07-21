@@ -39,12 +39,10 @@ import java.util.NoSuchElementException;
 public class FeatureServiceResource extends Resource {
     public static final Variant JSON = new Variant(new MediaType("application/json"));
     private final GeoServer geoserver;
-    private final String format;
 
-    public FeatureServiceResource(Context context, Request request, Response response, GeoServer geoserver, String format) {
+    public FeatureServiceResource(Context context, Request request, Response response, GeoServer geoserver) {
         super(context, request, response);
         this.geoserver = geoserver;
-        this.format = format;
         getVariants().add(JSON);
     }
 
@@ -61,6 +59,7 @@ public class FeatureServiceResource extends Resource {
     }
 
     private Representation buildJsonRepresentation() {
+    	String format = getRequest().getResourceRef().getQueryAsForm().getFirstValue("f");
         if (!"json".equals(format)) throw new IllegalArgumentException();
         String workspaceName = (String) getRequest().getAttributes().get("workspace");
         if (workspaceName == null) {

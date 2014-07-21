@@ -54,12 +54,10 @@ import org.restlet.resource.Variant;
 public class MapResource extends Resource {
     public static final Variant JSON = new Variant(new MediaType("application/json"));
     private final GeoServer geoServer;
-    private final String format;
     
-    public MapResource(Context context, Request request, Response response, GeoServer geoServer, String format) {
+    public MapResource(Context context, Request request, Response response, GeoServer geoServer) {
         super(context, request, response);
         this.geoServer = geoServer;
-        this.format = format;
         getVariants().add(JSON);
     }
     
@@ -84,6 +82,7 @@ public class MapResource extends Resource {
     }
     
     private Representation buildJsonRepresentation() {
+    	String format = getRequest().getResourceRef().getQueryAsForm().getFirstValue("f");
         if (!"json".equals(format)) throw new IllegalArgumentException("json is the only supported format");
         String workspaceName = (String) getRequest().getAttributes().get("workspace");
         if (workspaceName == null) {

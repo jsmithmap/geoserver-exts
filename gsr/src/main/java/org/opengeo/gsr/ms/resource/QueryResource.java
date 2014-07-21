@@ -74,15 +74,13 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class QueryResource extends Resource {
     public static final Variant JSON = new Variant(new MediaType("application/json"));
-    public QueryResource(Context context, Request request, Response response, Catalog catalog, String format) {
+    public QueryResource(Context context, Request request, Response response, Catalog catalog) {
         super(context, request, response);
         this.catalog = catalog;
-        this.format = format;
         getVariants().add(JSON);
     }
     
     private final Catalog catalog;
-    private final String format;
     private static final FilterFactory2 FILTERS = CommonFactoryFinder.getFilterFactory2();
     private static final Logger LOG = org.geotools.util.logging.Logging.getLogger("org.geoserver.global");
     
@@ -116,6 +114,7 @@ public class QueryResource extends Resource {
     }
 
     private Representation buildJsonRepresentation() {
+    	String format = getRequest().getResourceRef().getQueryAsForm().getFirstValue("f");
         if (!"json".equals(format)) throw new IllegalArgumentException("json is the only supported format");
         String workspace = (String) getRequest().getAttributes().get("workspace");
 

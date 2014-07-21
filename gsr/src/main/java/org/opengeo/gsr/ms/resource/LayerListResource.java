@@ -62,15 +62,13 @@ import com.vividsolutions.jts.geom.Geometry;
 public class LayerListResource extends Resource {
     public static final Variant JSON = new Variant(new MediaType("application/json"));
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(LayerListResource.class);
-    public LayerListResource(Context context, Request request, Response response, Catalog catalog, String format) {
+    public LayerListResource(Context context, Request request, Response response, Catalog catalog) {
         super(context, request, response);
         this.catalog = catalog;
-        this.format = format;
         getVariants().add(JSON);
     }
     
     private final Catalog catalog;
-    private final String format;
 
     @Override
     public Representation getRepresentation(Variant variant) {
@@ -96,7 +94,8 @@ public class LayerListResource extends Resource {
     }
 
     private Representation buildJsonRepresentation() {
-        if (!"json".equals(format)) throw new IllegalArgumentException("json is the only supported format");
+    	String format = getRequest().getResourceRef().getQueryAsForm().getFirstValue("f");
+        if (!"json".equals(format)) throw new IllegalArgumentException("json is the only supported format, not " + format);
         String workspaceName = (String) getRequest().getAttributes().get("workspace");
         WorkspaceInfo workspace = catalog.getWorkspaceByName(workspaceName);
         if (workspace == null) {
