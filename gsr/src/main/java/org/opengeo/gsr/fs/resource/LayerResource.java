@@ -339,8 +339,6 @@ public class LayerResource extends Resource {
 
     // catalog integration
     private final Catalog catalog;
-    private final String layerId;
-
 
     // data model
     //    public final int id;
@@ -387,10 +385,9 @@ public class LayerResource extends Resource {
     /** If geometry can be edited */
     //	boolean allowGeometryUpdates;
 
-    public LayerResource(Context context, Request request, Response response, Catalog catalog, String layerId) {
+    public LayerResource(Context context, Request request, Response response, Catalog catalog) {
         super(context, request, response);
         this.catalog = catalog;
-        this.layerId = layerId;
         getVariants().add(JSON);
     }	
 
@@ -435,10 +432,5 @@ public class LayerResource extends Resource {
         getResponse().setStatus(new Status(error.getCode()));
         GeoServicesJsonFormat format = new GeoServicesJsonFormat();
         return format.toRepresentation(error);
-    }
-
-    @Override
-    public String toString() {
-        return String.valueOf(layerId);
     }
 }

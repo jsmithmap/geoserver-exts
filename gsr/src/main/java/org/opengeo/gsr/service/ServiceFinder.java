@@ -82,7 +82,7 @@ public class ServiceFinder extends Router {
                         Finder legendFinder = new Finder(getContext()) {
                                 @Override
                                 public Resource findTarget(Request request, Response response) {
-                                        return new LegendResource(getContext(), request, response, geoServer.getCatalog(), null);
+                                        return new LegendResource(getContext(), request, response, geoServer.getCatalog());
                                 }
                         };
                         attach("", rootResourceFinder);
@@ -108,7 +108,7 @@ public class ServiceFinder extends Router {
                         Finder layerFinder = new Finder(getContext()) {
                                 @Override
                                 public Resource findTarget(Request request, Response response) {
-                                        return new LayerResource(null, request, response, geoServer.getCatalog(), null);
+                                        return new LayerResource(getContext(), request, response, geoServer.getCatalog());
                                 }
                         };
                         attach("", rootResourceFinder);
