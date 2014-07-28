@@ -20,9 +20,10 @@ import org.opengeo.gsr.fs.resource.FeatureResource;
 import org.opengeo.gsr.fs.resource.LayerResource;
 import org.opengeo.gsr.ms.resource.LayerListResource;
 import org.opengeo.gsr.ms.resource.LegendResource;
-import org.opengeo.gsr.ms.resource.MapResource;
-import org.opengeo.gsr.ms.resource.QueryResource;
 import org.opengeo.gsr.ms.resource.ExportMapResource;
+import org.opengeo.gsr.ms.resource.MapResource;
+import org.opengeo.gsr.ms.resource.MapTileResource;
+import org.opengeo.gsr.ms.resource.QueryResource;
 import org.opengeo.gsr.resource.CatalogResource;
 import org.restlet.Context;
 import org.restlet.Finder;
@@ -90,11 +91,18 @@ public class ServiceFinder extends Router {
                                         return new ExportMapResource(getContext(), request, response, geoServer.getCatalog(), dispatcher);
                                 }
                         };
+                        Finder tileFinder = new Finder(getContext()) {
+                            @Override
+                            public Resource findTarget(Request request, Response response) {
+                                return new MapTileResource(getContext(), request, response, geoServer.getCatalog(), dispatcher);
+                            }
+                        };
                         attach("", rootResourceFinder);
                         attach("/export", exportMapFinder);
                         attach("/layers", layerListFinder);
                         attach("/{layerOrTable}/query", queryFinder);
                         attach("/legend", legendFinder);
+                        attach("/tile/{level}/{row}/{col}", tileFinder);
                 }
         };
         Router featureService = new Router(getContext()) {

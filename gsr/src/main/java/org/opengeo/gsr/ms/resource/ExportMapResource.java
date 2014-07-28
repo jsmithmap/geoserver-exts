@@ -53,6 +53,7 @@ import org.opengeo.gsr.core.geometry.SpatialReference;
 import org.opengeo.gsr.core.geometry.SpatialReferenceEncoder;
 import org.opengeo.gsr.core.geometry.SpatialReferences;
 import org.opengeo.gsr.core.geometry.SpatialRelationship;
+import org.opengeo.gsr.ms.util.ByteArrayRepresentation;
 import org.opengeo.gsr.ms.util.FakeHttpServletRequest;
 import org.opengeo.gsr.ms.util.FakeHttpServletResponse;
 import org.opengis.feature.Feature;
@@ -105,14 +106,13 @@ public class ExportMapResource extends Resource {
                 getResponse().setEntity(new StringRepresentation(e.getMessage()));
             }
         } else if ("image".equals(f)) {
-            String format = options.getFirstValue("format");
             try {
                 Export export = doExport(options);
                 Map<String, String> query = createWMSQuery(export);
                 FakeHttpServletResponse response = dispatch(query);
                 getResponse().setEntity(new ByteArrayRepresentation(new MediaType(response.getContentType()), response.getBodyBytes()));
             } catch (Exception e) {
-                getResponse().setEntity(new StringRepresentation("Image failed: " + e));
+                getResponse().setEntity(new StringRepresentation("Image failed: " + e.getMessage()));
             }
         }
     }
@@ -129,7 +129,8 @@ public class ExportMapResource extends Resource {
         int[] size = getSize(options);
         double dpi = 96d;
         double scale = RendererUtilities.calculateScale(bbox, size[0], size[1], dpi);
-        return new Export(size[0], size[1], bbox, scale);
+        String format = options.getFirstValue("format", "image/png");
+        return new Export(size[0], size[1], bbox, scale, format);
     }
 
     private final Map<String, String> createWMSQuery(Export export) {
@@ -142,7 +143,7 @@ public class ExportMapResource extends Resource {
         query.put("layers", layers);
         query.put("height", String.valueOf(export.height));
         query.put("width", String.valueOf(export.width));
-        query.put("format", "image/png");
+        query.put("format", export.format == null ? "image/png" : export.format);
         query.put("bbox", toBBOX(export.extent));
         return query;
     }
@@ -195,12 +196,14 @@ public class ExportMapResource extends Resource {
         public final int height;
         public final ReferencedEnvelope extent;
         public final double scale;
+        public final String format;
 
-        public Export(int width, int height, ReferencedEnvelope extent, double scale) {
+        public Export(int width, int height, ReferencedEnvelope extent, double scale, String format) {
             this.width = width;
             this.height = height;
             this.extent = extent;
             this.scale = scale;
+            this.format = format;
         }
     }
 
@@ -234,17 +237,6 @@ public class ExportMapResource extends Resource {
             builder.key("scale").value(export.scale);
             builder.endObject();
             writer.flush();
-        }
-    }
-
-    private class ByteArrayRepresentation extends OutputRepresentation {
-        private byte[] bytes;
-        public ByteArrayRepresentation(MediaType mtype, byte[] bytes) {
-            super(mtype);
-            this.bytes = bytes;
-        }
-        public void write(OutputStream out) throws IOException {
-            out.write(bytes);
         }
     }
 }

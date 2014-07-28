@@ -27,7 +27,6 @@ public class ExportMapResourceTest extends ResourceTest {
     public void testImage() throws Exception {
         MockHttpServletResponse result = getAsServletResponse(baseURL + "cite/MapServer/export?f=image&bbox=-127.8,5.8,-63.5,70.1&bboxSR=4326");
         assertEquals("image/png", result.getContentType());
-        result.getErrorCode();
-        // assertEquals(200, result.getStatus());
+        assertEquals(200, result.getErrorCode());
     }
 }
