@@ -2,7 +2,9 @@
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
- package org.opengeo.gsr.core.geometry;
+package org.opengeo.gsr.core.geometry;
+
+import java.util.NoSuchElementException;
 
 import org.geotools.referencing.CRS;
 import org.opengis.referencing.FactoryException;
@@ -11,6 +13,7 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import net.sf.json.JSON;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import net.sf.json.JSONSerializer;
 import net.sf.json.util.JSONBuilder;
 
 public class SpatialReferenceEncoder {
@@ -60,6 +63,31 @@ public class SpatialReferenceEncoder {
         
         throw new JSONException("Could not determine spatial reference from JSON: " + json);
     }
+
+    public static CoordinateReferenceSystem parseSpatialReference(String srText) {
+        if (srText == null) {
+            return null;
+        } else {
+            try {
+                int srid = Integer.parseInt(srText);
+                return CRS.decode("EPSG:" + srid);
+            } catch (NumberFormatException e) {
+                // fall through - it may be a JSON representation
+            } catch (FactoryException e) {
+                // this means we successfully parsed the integer, but it is not
+                // a valid SRID. Raise it up the stack.
+                throw new NoSuchElementException("Could not find spatial reference for ID " + srText);
+            }
+            
+            try {
+                net.sf.json.JSON json = JSONSerializer.toJSON(srText);
+                return SpatialReferenceEncoder.coordinateReferenceSystemFromJSON(json);
+            } catch (JSONException e) {
+                throw new IllegalArgumentException("Failed to parse JSON spatial reference: " + srText);
+            }
+        }
+    }
+    
 
     public static CoordinateReferenceSystem fromJson(JSONObject sr) throws FactoryException {
         if (sr.containsKey("wkid")) {

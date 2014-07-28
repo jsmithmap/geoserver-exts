@@ -22,6 +22,7 @@ import org.opengeo.gsr.ms.resource.LayerListResource;
 import org.opengeo.gsr.ms.resource.LegendResource;
 import org.opengeo.gsr.ms.resource.MapResource;
 import org.opengeo.gsr.ms.resource.QueryResource;
+import org.opengeo.gsr.ms.resource.ExportMapResource;
 import org.opengeo.gsr.resource.CatalogResource;
 import org.restlet.Context;
 import org.restlet.Finder;
@@ -41,7 +42,6 @@ public class ServiceFinder extends Router {
     @SuppressWarnings("unused")
     final private WMS wms;
 
-    @SuppressWarnings("unused")
     final private Dispatcher dispatcher;
 
     public ServiceFinder(GeoServer geoServer, WMS wms, Dispatcher dispatcher) {
@@ -52,7 +52,6 @@ public class ServiceFinder extends Router {
 
     { 
         setRoutingMode(BEST);
-//        setRequiredScore(1);
         Finder catalogService = new Finder() {
                 @Override
                 public Resource findTarget(Request request, Response response) {
@@ -85,7 +84,14 @@ public class ServiceFinder extends Router {
                                         return new LegendResource(getContext(), request, response, geoServer.getCatalog());
                                 }
                         };
+                        Finder exportMapFinder = new Finder(getContext()) {
+                                @Override
+                                public Resource findTarget(Request request, Response response) {
+                                        return new ExportMapResource(getContext(), request, response, geoServer.getCatalog(), dispatcher);
+                                }
+                        };
                         attach("", rootResourceFinder);
+                        attach("/export", exportMapFinder);
                         attach("/layers", layerListFinder);
                         attach("/{layerOrTable}/query", queryFinder);
                         attach("/legend", legendFinder);

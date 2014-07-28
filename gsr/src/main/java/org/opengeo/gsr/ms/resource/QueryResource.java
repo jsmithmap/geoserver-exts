@@ -172,7 +172,7 @@ public class QueryResource extends Resource {
         
         String inSRText = form.getFirstValue("inSR");
         String outSRText = form.getFirstValue("outSR");
-        final CoordinateReferenceSystem outSR = parseSpatialReference(outSRText);
+        final CoordinateReferenceSystem outSR = SpatialReferenceEncoder.parseSpatialReference(outSRText);
         
         String spatialRelText = form.getFirstValue("spatialRel", "SpatialRelIntersects");
         SpatialRelationship spatialRel = SpatialRelationship.fromRequestString(spatialRelText);
@@ -461,30 +461,6 @@ public class QueryResource extends Resource {
         }
     }
     
-    private static CoordinateReferenceSystem parseSpatialReference(String srText) {
-        if (srText == null) {
-            return null;
-        } else {
-            try {
-                int srid = Integer.parseInt(srText);
-                return CRS.decode("EPSG:" + srid);
-            } catch (NumberFormatException e) {
-                // fall through - it may be a JSON representation
-            } catch (FactoryException e) {
-                // this means we successfully parsed the integer, but it is not
-                // a valid SRID. Raise it up the stack.
-                throw new NoSuchElementException("Could not find spatial reference for ID " + srText);
-            }
-            
-            try {
-                net.sf.json.JSON json = JSONSerializer.toJSON(srText);
-                return SpatialReferenceEncoder.coordinateReferenceSystemFromJSON(json);
-            } catch (JSONException e) {
-                throw new IllegalArgumentException("Failed to parse JSON spatial reference: " + srText);
-            }
-        }
-    }
-    
     /**
      * Read the input spatial reference. This may be specified as an attribute
      * of the geometry (if the geometry is sent as JSON) or else in the 'inSR'
@@ -497,9 +473,9 @@ public class QueryResource extends Resource {
             if (sr instanceof JSONObject)
                 return SpatialReferenceEncoder.fromJson((JSONObject) sr);
             else
-                return parseSpatialReference(srText);
+                return SpatialReferenceEncoder.parseSpatialReference(srText);
         } catch (JSONException e) {
-            return parseSpatialReference(srText);
+            return SpatialReferenceEncoder.parseSpatialReference(srText);
         } catch (FactoryException e) {
             throw new NoSuchElementException("Could not find spatial reference for id " + srText);
         }
