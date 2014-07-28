@@ -54,7 +54,7 @@
                     <key>
                         <value>/services</value>
                     </key>
-                    <value>serviceFinder</value>
+                    <value>jsonpFilter</value>
                 </entry>
                 <!--
                 <entry>

@@ -55,6 +55,7 @@ public class CatalogResource extends Resource {
     @Override
     public Representation getRepresentation(Variant variant) {
     	String format = getRequest().getResourceRef().getQueryAsForm().getFirstValue("f");
+    	if (format == null) format = getRequest().getEntityAsForm().getFirstValue("f");
     	GeoServicesJsonFormat gsFormat = new GeoServicesJsonFormat();
 		if ("json".equals(format)) {
 			try {
@@ -84,5 +85,15 @@ public class CatalogResource extends Resource {
 			details.add("Format " + format + " is not supported");
 			return gsFormat.toRepresentation(new ServiceException(new ServiceError(Status.CLIENT_ERROR_BAD_REQUEST.getCode(), "Output format not supported", details)));
 		}
+    }
+    
+    @Override
+    public boolean allowPost() {
+    	return true;
+    }
+    
+    @Override
+    public void handlePost() {
+    	handleGet();
     }
 }

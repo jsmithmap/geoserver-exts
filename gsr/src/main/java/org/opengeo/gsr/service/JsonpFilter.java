@@ -26,7 +26,6 @@ import org.restlet.resource.StringRepresentation;
  * 
  */
 public class JsonpFilter extends Filter {
-
     @Override
     protected void afterHandle(Request request, Response response) {
         String callback = request.getResourceRef().getQueryAsForm().getFirstValue("callback");
@@ -59,6 +58,5 @@ public class JsonpFilter extends Filter {
             response.setEntity(new StringRepresentation(stringBuilder.toString(),
                     MediaType.TEXT_PLAIN));
         }
-
     }
 }
