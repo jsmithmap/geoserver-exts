@@ -88,6 +88,21 @@ public class ExportMapResource extends Resource {
     private Dispatcher dispatcher;
     private Catalog catalog;
 
+    private static final Map<String, String> GSR_FORMATS_TO_GEOSERVER_FORMATS;
+    static {
+        Map<String, String> formats = new HashMap<String, String>();
+        formats.put("png", "image/png");
+        formats.put("png8", "image/png");
+        formats.put("png24", "image/png");
+        formats.put("jpg", "image/jpeg");
+        formats.put("pdf", "image/pdf");
+        formats.put("bmp", "image/bmp");
+        formats.put("svg", "image/svg");
+        formats.put("svgz", "image/svgz");
+        formats.put("png32", "image/png");
+        GSR_FORMATS_TO_GEOSERVER_FORMATS = Collections.unmodifiableMap(formats);
+    }
+
     public ExportMapResource(Context context, Request request, Response response, Catalog catalog, Dispatcher dispatcher) {
         super(context, request, response);
         this.catalog = catalog;
@@ -129,8 +144,18 @@ public class ExportMapResource extends Resource {
         int[] size = getSize(options);
         double dpi = 96d;
         double scale = RendererUtilities.calculateScale(bbox, size[0], size[1], dpi);
-        String format = options.getFirstValue("format", "image/png");
+        String format = resolveFormat(options.getFirstValue("format"));
         return new Export(size[0], size[1], bbox, scale, format);
+    }
+
+    private final String resolveFormat(String rawFormat) {
+        if (rawFormat == null) {
+            return "image/png";
+        } else if (GSR_FORMATS_TO_GEOSERVER_FORMATS.containsKey(rawFormat)) {
+            return GSR_FORMATS_TO_GEOSERVER_FORMATS.get(rawFormat);
+        } else {
+            return rawFormat;
+        }
     }
 
     private final Map<String, String> createWMSQuery(Export export) {
