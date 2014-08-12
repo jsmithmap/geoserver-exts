@@ -14,12 +14,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import net.sf.json.JSON;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
@@ -110,7 +112,7 @@ public class ExportMapResource extends Resource {
     }
 
     @Override
-    public void handleGet() { // getRepresentation(Variant v) {
+    public void handleGet() {
         Form options = getRequest().getResourceRef().getQueryAsForm();
         String f = options.getFirstValue("f");
         if ("json".equals(f)) {
@@ -132,6 +134,43 @@ public class ExportMapResource extends Resource {
         }
     }
 
+    private Map<String, String> getLayerDefs(Form options) {
+        String spec = options.getFirstValue("layerDefs");
+        if (spec == null) return Collections.emptyMap();
+
+        Map<String, String> result = parseJsonLayerDefs(spec);
+        if (result != null) return result;
+        return parseSimpleLayerDefs(spec);
+    }
+
+    private Map<String, String> parseJsonLayerDefs(String spec) {
+        JSON json = JSONSerializer.toJSON(spec);
+        if (!(json instanceof JSONObject)) {
+            return Collections.emptyMap();
+        }
+        JSONObject jsonObject = (JSONObject) json;
+        Map<String, String> result = new HashMap<String, String>();
+        Iterator it = jsonObject.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry e = (Map.Entry) it.next();
+            if (e.getValue() instanceof String) {
+                result.put((String) e.getKey(), (String) e.getValue());
+            }
+        }
+        return result;
+    }
+
+    private Map<String, String> parseSimpleLayerDefs(String spec) {
+        Map<String, String> result = new HashMap<String, String>();
+        String[] entries = spec.split(";");
+        for (String e : entries) {
+            String[] pair = e.split(":", 2);
+            if (pair.length != 2) continue;
+            result.put(pair[0], pair[1]);
+        }
+        return result;
+    }
+
     private FakeHttpServletResponse dispatch(Map<String, String> query) throws Exception {
         FakeHttpServletRequest request = new FakeHttpServletRequest(query);
         FakeHttpServletResponse response = new FakeHttpServletResponse();
@@ -142,10 +181,13 @@ public class ExportMapResource extends Resource {
     private final Export doExport(Form options) throws TransformException, FactoryException {
         ReferencedEnvelope bbox = getBBox(options);
         int[] size = getSize(options);
+        boolean transparent = getTransparent(options);
         double dpi = 96d;
         double scale = RendererUtilities.calculateScale(bbox, size[0], size[1], dpi);
         String format = resolveFormat(options.getFirstValue("format"));
-        return new Export(size[0], size[1], bbox, scale, format);
+        CoordinateReferenceSystem imageCRS = getImageCRS(options);
+        Map<String, String> layerDefs = getLayerDefs(options);
+        return new Export(size[0], size[1], transparent, bbox, scale, imageCRS, format);
     }
 
     private final String resolveFormat(String rawFormat) {
@@ -156,6 +198,10 @@ public class ExportMapResource extends Resource {
         } else {
             return rawFormat;
         }
+    }
+
+    private final boolean getTransparent(Form options) {
+        return Boolean.valueOf(options.getFirstValue("transparent"));
     }
 
     private final Map<String, String> createWMSQuery(Export export) {
@@ -170,11 +216,29 @@ public class ExportMapResource extends Resource {
         query.put("width", String.valueOf(export.width));
         query.put("format", export.format == null ? "image/png" : export.format);
         query.put("bbox", toBBOX(export.extent));
+        if (export.transparent) {
+            query.put("transparent", "true");
+        }
+        if (export.imageCRS != null) {
+            query.put("srsname", toSRSName(export.imageCRS));
+        }
+
+        // TODO: LayerDefs
+        // TODO: LayerControl
         return query;
     }
 
     private final String toBBOX(ReferencedEnvelope e) {
         return e.getMinX() + "," + e.getMinY() + "," + e.getMaxX() + "," + e.getMaxY();
+    }
+
+    private final String toSRSName(CoordinateReferenceSystem crs) {
+        try {
+            int code = CRS.lookupEpsgCode(crs, true);
+            return "EPSG:" + code;
+        } catch (FactoryException e) {
+            return "";
+        }
     }
 
     private ReferencedEnvelope getBBox(Form options) {
@@ -186,9 +250,24 @@ public class ExportMapResource extends Resource {
             parsedCoords[i] = Double.valueOf(splitCoords[i]);
         }
 
-        CoordinateReferenceSystem crs = SpatialReferenceEncoder.parseSpatialReference(options.getFirstValue("bboxSR"));
-        if (crs == null) crs = DefaultGeographicCRS.WGS84;
+        CoordinateReferenceSystem crs = parseSR(options.getFirstValue("bboxSR"));
         return new ReferencedEnvelope(parsedCoords[0], parsedCoords[2], parsedCoords[1], parsedCoords[3], crs);
+    }
+
+    private CoordinateReferenceSystem getImageCRS(Form options) {
+        String sr = options.getFirstValue("imageSR");
+        if (sr == null)
+            return null;
+        else
+            return parseSR(sr);
+    }
+
+    private CoordinateReferenceSystem parseSR(String sr) {
+        CoordinateReferenceSystem crs = SpatialReferenceEncoder.parseSpatialReference(sr);
+        if (crs == null)
+            return DefaultGeographicCRS.WGS84;
+        else
+            return crs;
     }
 
     private int[] getSize(Form options) {
@@ -202,6 +281,24 @@ public class ExportMapResource extends Resource {
                 Integer.valueOf(splitValues[1])
             };
         }
+    }
+
+    private LayerControl getLayerControl(Form options) {
+        String spec = options.getFirstValue("layers");
+        if (spec == null) return null;
+        int colonIndex = spec.indexOf(":");
+        if (colonIndex == -1) return null;
+        String prefix = spec.substring(0, colonIndex);
+        if (!"hide".equals(prefix) &&
+            !"show".equals(prefix) &&
+            !"include".equals(prefix) &&
+            !"exclude".equals(prefix))
+        {
+            return null;
+        }
+        String layers = spec.substring(colonIndex + 1);
+        String[] splitLayers = layers.split(",");
+        return new LayerControl();
     }
 
     private String getLayerNames(String workspaceName) {
@@ -219,17 +316,24 @@ public class ExportMapResource extends Resource {
     private final static class Export {
         public final int width;
         public final int height;
+        public final boolean transparent;
         public final ReferencedEnvelope extent;
         public final double scale;
         public final String format;
+        public final CoordinateReferenceSystem imageCRS;
 
-        public Export(int width, int height, ReferencedEnvelope extent, double scale, String format) {
+        public Export(int width, int height, boolean transparent, ReferencedEnvelope extent, double scale, CoordinateReferenceSystem imageCRS, String format) {
             this.width = width;
             this.height = height;
             this.extent = extent;
             this.scale = scale;
             this.format = format;
+            this.imageCRS = imageCRS;
+            this.transparent = transparent;
         }
+    }
+
+    private final static class LayerControl {
     }
 
     private class JsonRepresentation extends OutputRepresentation {
