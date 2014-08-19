@@ -22,6 +22,7 @@ import org.opengeo.gsr.ms.resource.LayerListResource;
 import org.opengeo.gsr.ms.resource.LegendResource;
 import org.opengeo.gsr.ms.resource.MapResource;
 import org.opengeo.gsr.ms.resource.QueryResource;
+import org.opengeo.gsr.ms.resource.SingleLayerResource;
 import org.opengeo.gsr.resource.CatalogResource;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -81,6 +82,9 @@ public class ServiceFinder extends AbstractCatalogFinder {
                     resource = new QueryResource(null, request, response, catalog, format);
                 } else if ("legend".equals(operation)) {
                     resource = new LegendResource(null, request, response, catalog, format);
+                } else {
+                  // in this case the 'operation' parameter ends up being the layer id
+                  resource = new SingleLayerResource(null, request, response, catalog, format, operation);
                 }
                 break;
             case FeatureServer:
